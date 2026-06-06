@@ -49,7 +49,23 @@ cp .env.example .env
 npm run start:dev
 ```
 
-## Docker
+## Docker image
+
+Published image:
+
+```txt
+ghcr.io/dmytrobaida/telegram-s3:latest
+```
+
+Run with Docker:
+
+```bash
+cp .env.example .env
+# edit .env
+docker run --env-file .env -p 3000:3000 -v telegram-s3-data:/data ghcr.io/dmytrobaida/telegram-s3:latest
+```
+
+Or build locally:
 
 ```bash
 docker build -t telegram-s3 .
@@ -57,6 +73,8 @@ docker run --env-file .env -p 3000:3000 -v telegram-s3-data:/data telegram-s3
 ```
 
 ## Docker Compose
+
+`docker-compose.yml` uses `ghcr.io/dmytrobaida/telegram-s3:latest` by default.
 
 Run:
 
