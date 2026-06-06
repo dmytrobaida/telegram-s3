@@ -1,5 +1,6 @@
 export interface ObjectPart {
   fileId: string;
+  messageId?: number;
   size: number;
 }
 

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { Request } from 'express';
 import { isNotDefined } from '../common/assertions';
@@ -6,23 +6,28 @@ import { requiredEnv } from '../common/env';
 
 @Injectable()
 export class S3AuthService {
+  private readonly logger = new Logger(S3AuthService.name);
   private readonly accessKey = requiredEnv('S3_ACCESS_KEY_ID');
   private readonly secretKey = requiredEnv('S3_SECRET_ACCESS_KEY');
 
   verify(req: Request, body: Buffer) {
     if (req.path === '/health') {
+      this.logger.debug('Skipping auth for health check');
       return;
     }
 
     const auth = req.header('authorization');
     if (auth?.startsWith('AWS4-HMAC-SHA256 ') === true) {
+      this.logger.debug(`Verifying AWS SigV4 header auth method=${req.method} path=${req.path} bytes=${body.length}`);
       return this.verifyHeaderAuth(req, body, auth);
     }
 
     if (typeof req.query['X-Amz-Signature'] === 'string') {
+      this.logger.debug(`Verifying AWS SigV4 query auth method=${req.method} path=${req.path} bytes=${body.length}`);
       return this.verifyQueryAuth(req, body);
     }
 
+    this.logger.warn(`Missing AWS SigV4 authorization method=${req.method} path=${req.path}`);
     throw new UnauthorizedException('Missing AWS Signature v4 Authorization');
   }
 
@@ -30,22 +35,26 @@ export class S3AuthService {
     const fields = parseAuthHeader(auth);
     const credential = fields.Credential?.split('/');
     if (isNotDefined(credential) || credential.length !== 5 || credential[0] !== this.accessKey) {
+      this.logger.warn(`Invalid header auth access key method=${req.method} path=${req.path}`);
       throw new UnauthorizedException('Invalid access key');
     }
 
     const [, date, region, service, terminal] = credential;
     if (service !== 's3' || terminal !== 'aws4_request') {
+      this.logger.warn(`Invalid credential scope method=${req.method} path=${req.path} service=${service} terminal=${terminal}`);
       throw new UnauthorizedException('Invalid credential scope');
     }
 
     const signedHeaders = fields.SignedHeaders;
     const signature = fields.Signature;
     if (isNotDefined(signedHeaders) || isNotDefined(signature)) {
+      this.logger.warn(`Invalid Authorization header method=${req.method} path=${req.path}`);
       throw new UnauthorizedException('Invalid Authorization header');
     }
 
     const amzDate = req.header('x-amz-date');
     if (isNotDefined(amzDate)) {
+      this.logger.warn(`Missing x-amz-date method=${req.method} path=${req.path}`);
       throw new UnauthorizedException('Missing x-amz-date');
     }
 
@@ -53,18 +62,23 @@ export class S3AuthService {
     const stringToSign = ['AWS4-HMAC-SHA256', amzDate, `${date}/${region}/${service}/${terminal}`, sha256(canonicalRequest)].join('\n');
     const expected = hmacHex(signingKey(this.secretKey, date, region, service), stringToSign);
     if (safeEqualHex(expected, signature) === false) {
+      this.logger.warn(`Header signature mismatch method=${req.method} path=${req.path} region=${region}`);
       throw new UnauthorizedException('Signature mismatch');
     }
+
+    this.logger.debug(`Header auth verified method=${req.method} path=${req.path} region=${region}`);
   }
 
   private verifyQueryAuth(req: Request, body: Buffer) {
     const algorithm = String(req.query['X-Amz-Algorithm'] ?? '');
     if (algorithm !== 'AWS4-HMAC-SHA256') {
+      this.logger.warn(`Invalid presign algorithm method=${req.method} path=${req.path} algorithm=${algorithm}`);
       throw new UnauthorizedException('Invalid presign algorithm');
     }
 
     const credential = String(req.query['X-Amz-Credential'] ?? '').split('/');
     if (credential.length !== 5 || credential[0] !== this.accessKey) {
+      this.logger.warn(`Invalid query auth access key method=${req.method} path=${req.path}`);
       throw new UnauthorizedException('Invalid access key');
     }
 
@@ -76,13 +90,16 @@ export class S3AuthService {
     const stringToSign = ['AWS4-HMAC-SHA256', amzDate, `${date}/${region}/${service}/${terminal}`, sha256(canonicalRequest)].join('\n');
     const expected = hmacHex(signingKey(this.secretKey, date, region, service), stringToSign);
     if (safeEqualHex(expected, signature) === false) {
+      this.logger.warn(`Query signature mismatch method=${req.method} path=${req.path} region=${region}`);
       throw new UnauthorizedException('Signature mismatch');
     }
+
+    this.logger.debug(`Query auth verified method=${req.method} path=${req.path} region=${region}`);
   }
 
   private canonicalRequest(req: Request, body: Buffer, signedHeaders: string[], presigned: boolean) {
     const method = req.method.toUpperCase();
-    const path = encodeURI(decodeURI(req.path)).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+    const path = canonicalUri(req);
     const query = canonicalQuery(req, presigned);
     const headers = signedHeaders.map((h) => `${h}:${normalizeHeader(req.header(h) ?? '')}`).join('\n');
     const payloadHash = presigned ? 'UNSIGNED-PAYLOAD' : req.header('x-amz-content-sha256') || sha256Buffer(body);
@@ -97,6 +114,22 @@ function parseAuthHeader(auth: string) {
     out[k] = v.join('=');
   }
   return out;
+}
+
+function canonicalUri(req: Request) {
+  const rawPath = req.originalUrl.split('?')[0] ?? '/';
+  return rawPath
+    .split('/')
+    .map((segment) => awsEncode(safeDecodeURIComponent(segment)))
+    .join('/');
+}
+
+function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function canonicalQuery(req: Request, presigned: boolean) {

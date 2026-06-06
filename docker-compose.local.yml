@@ -1,7 +1,10 @@
 services:
   telegram-s3:
-    image: ghcr.io/dmytrobaida/telegram-s3:latest
-    container_name: telegram-s3
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: telegram-s3:local
+    container_name: telegram-s3-local
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -17,7 +20,7 @@ services:
       TELEGRAM_PART_SIZE: ${TELEGRAM_PART_SIZE:-19922944}
       MAX_OBJECT_SIZE: ${MAX_OBJECT_SIZE:-500mb}
     volumes:
-      - telegram-s3-data:/data
+      - telegram-s3-local-data:/data
 
 volumes:
-  telegram-s3-data:
+  telegram-s3-local-data:
