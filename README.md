@@ -57,14 +57,14 @@ and persists metadata in a Docker volume.
 
 Use these values with any S3-compatible client:
 
-| Field | Value |
-| --- | --- |
-| Provider | Custom / S3-compatible provider |
-| Endpoint | `http://your-server:3000` or your HTTPS domain |
-| Access Key Id | value of `S3_ACCESS_KEY_ID` |
-| Secret Access Key | value of `S3_SECRET_ACCESS_KEY` |
-| Bucket | value of `S3_BUCKET` |
-| Region | value of `S3_REGION`, for example `us-east-1` |
+| Field             | Value                                          |
+| ----------------- | ---------------------------------------------- |
+| Provider          | Custom / S3-compatible provider                |
+| Endpoint          | `http://your-server:3000` or your HTTPS domain |
+| Access Key Id     | value of `S3_ACCESS_KEY_ID`                    |
+| Secret Access Key | value of `S3_SECRET_ACCESS_KEY`                |
+| Bucket            | value of `S3_BUCKET`                           |
+| Region            | value of `S3_REGION`, for example `us-east-1`  |
 
 The server supports path-style URLs like:
 
@@ -112,7 +112,7 @@ Use this when you want to build the image from the local `Dockerfile` instead of
 ```bash
 cp .env.example .env
 # edit .env
-npm run docker:local
+npm run docker:local:up
 ```
 
 Stop it:
@@ -125,23 +125,23 @@ npm run docker:local:down
 
 Required:
 
-| Variable | Description |
-| --- | --- |
-| `TELEGRAM_BOT_TOKEN` | Telegram bot token from `@BotFather` |
-| `TELEGRAM_CHAT_ID` | Chat, group, or channel ID where files are sent |
-| `S3_ACCESS_KEY_ID` | S3 access key clients must use |
-| `S3_SECRET_ACCESS_KEY` | S3 secret key clients must use |
-| `S3_BUCKET` | Single bucket name exposed by this server |
-| `S3_REGION` | S3 region string, for example `us-east-1` |
+| Variable               | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN`   | Telegram bot token from `@BotFather`            |
+| `TELEGRAM_CHAT_ID`     | Chat, group, or channel ID where files are sent |
+| `S3_ACCESS_KEY_ID`     | S3 access key clients must use                  |
+| `S3_SECRET_ACCESS_KEY` | S3 secret key clients must use                  |
+| `S3_BUCKET`            | Single bucket name exposed by this server       |
+| `S3_REGION`            | S3 region string, for example `us-east-1`       |
 
 Optional:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | `3000` | HTTP server port |
-| `METADATA_FILE` | `/data/metadata.json` in app defaults | Metadata JSON path |
-| `TELEGRAM_PART_SIZE` | `19922944` | Telegram chunk size. Keep below 20 MiB for downloads. |
-| `MAX_OBJECT_SIZE` | `200mb` | Max incoming single-request object size |
+| Variable             | Default                               | Description                                           |
+| -------------------- | ------------------------------------- | ----------------------------------------------------- |
+| `PORT`               | `3000`                                | HTTP server port                                      |
+| `METADATA_FILE`      | `/data/metadata.json` in app defaults | Metadata JSON path                                    |
+| `TELEGRAM_PART_SIZE` | `19922944`                            | Telegram chunk size. Keep below 20 MiB for downloads. |
+| `MAX_OBJECT_SIZE`    | `200mb`                               | Max incoming single-request object size               |
 
 ## Metadata persistence is critical
 
