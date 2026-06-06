@@ -1,16 +1,18 @@
 # Telegram S3
 
-A small S3-compatible NestJS/Express server that stores object bytes in Telegram Bot API messages/documents.
+Telegram S3 is a small S3-compatible NestJS/Express server that stores object data as Telegram Bot API document messages.
 
-## Dokploy destination values
+It exposes an S3-like HTTP API, validates AWS Signature V4 requests, and uses a Telegram bot chat/channel/group as the storage backend. S3 object metadata is persisted separately in a local JSON database, so the `/data` volume must be persistent.
 
-Use these values in Dokploy:
+## S3 client configuration
 
-- **Provider**: Any other S3 compatible provider
+Use these values with any S3-compatible client:
+
+- **Provider**: custom / S3-compatible provider
 - **Access Key Id**: value of `S3_ACCESS_KEY_ID`
 - **Secret Access Key**: value of `S3_SECRET_ACCESS_KEY`
 - **Bucket**: value of `S3_BUCKET`
-- **Region**: value of `S3_REGION`, for example `us-east-1` (S3 clients usually require a region even for custom endpoints)
+- **Region**: value of `S3_REGION`, for example `us-east-1`
 - **Endpoint**: your deployed URL, for example `https://s3.example.com`
 
 The server supports path-style URLs (`/bucket/key`) and virtual-host style when the host starts with the configured bucket.
@@ -56,13 +58,7 @@ docker run --env-file .env -p 3000:3000 -v telegram-s3-data:/data telegram-s3
 
 ## Docker Compose
 
-Edit `docker-compose.yml` and replace:
-
-```txt
-ghcr.io/YOUR_GITHUB_OWNER/YOUR_REPOSITORY:latest
-```
-
-with your real GHCR image name, then run:
+Run:
 
 ```bash
 cp .env.example .env
