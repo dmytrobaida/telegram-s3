@@ -54,6 +54,33 @@ docker build -t telegram-s3 .
 docker run --env-file .env -p 3000:3000 -v telegram-s3-data:/data telegram-s3
 ```
 
+## Docker Compose
+
+Edit `docker-compose.yml` and replace:
+
+```txt
+ghcr.io/YOUR_GITHUB_OWNER/YOUR_REPOSITORY:latest
+```
+
+with your real GHCR image name, then run:
+
+```bash
+cp .env.example .env
+# edit .env
+docker compose up -d
+```
+
+The compose file persists metadata in the `telegram-s3-data` Docker volume.
+
+## GitHub Actions Docker publishing
+
+`.github/workflows/docker.yml` builds and pushes the image to GitHub Container Registry:
+
+- `ghcr.io/<owner>/<repo>:<package.json version>`
+- `ghcr.io/<owner>/<repo>:latest`
+
+The workflow uses the built-in `GITHUB_TOKEN` and runs on pushes to `main`, version tags, or manual dispatch.
+
 ## Notes / limitations
 
 - Telegram Bot API upload limit is about 50 MB per document. This app splits regular `PUT Object` uploads into Telegram-sized parts.
