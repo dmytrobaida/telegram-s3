@@ -79,7 +79,7 @@ The compose file persists metadata in the `telegram-s3-data` Docker volume.
 - `ghcr.io/<owner>/<repo>:<package.json version>`
 - `ghcr.io/<owner>/<repo>:latest`
 
-The workflow uses the built-in `GITHUB_TOKEN` and runs on pushes to `main`, version tags, or manual dispatch.
+The workflow uses the built-in `GITHUB_TOKEN` and runs on pushes to `main`, version tags, or manual dispatch. On normal `main` pushes it skips the Docker build when the `package.json` version did not change.
 
 ## Notes / limitations
 

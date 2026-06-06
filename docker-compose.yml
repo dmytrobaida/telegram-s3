@@ -1,6 +1,6 @@
 services:
   telegram-s3:
-    image: ghcr.io/YOUR_GITHUB_OWNER/YOUR_REPOSITORY:latest
+    image: ghcr.io/dmytrobaida/telegram-s3:latest
     container_name: telegram-s3
     restart: unless-stopped
     ports:
